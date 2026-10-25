@@ -1,4 +1,5 @@
 state/
+generate_*
 
 # Operating System
 .DS_Store

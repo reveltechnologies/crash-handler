@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crash Handler</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100vh;
+      overflow: hidden;
+      /* Minecraft advancement UI tiled dirt background */
+      background-color: #3f2817;
+      background-image: url('dirt.png');
+      background-repeat: repeat;
+      background-size: 64px 64px;
+      image-rendering: pixelated;
+      color: #ffffff;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Top image banner */
+    .banner {
+      width: 100%;
+      height: 150px;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(2px);
+      border-bottom: 3px solid #1a110a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 15px 20px;
+    }
+
+    .banner img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    /* Middle upload section */
+    .content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      padding: 20px;
+    }
+
+    .content h2 {
+      font-size: 22px;
+      font-weight: bold;
+      color: #ffffff;
+      text-shadow: 2px 2px 0px #000000;
+    }
+
+    .upload-box {
+      background: rgba(0, 0, 0, 0.65);
+      border: 2px solid #1a110a;
+      box-shadow: inset 2px 2px 0px rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.5);
+      padding: 30px 45px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 260px;
+      min-height: 100px;
+    }
+
+    /* Hidden native file input */
+    #crashFileInput {
+      display: none;
+    }
+
+    /* Single Submit button styled like retro Minecraft UI */
+    .submit-btn {
+      padding: 10px 24px;
+      font-size: 15px;
+      cursor: pointer;
+      font-weight: bold;
+      background: #c6c6c6;
+      border: 2px solid #ffffff;
+      border-right-color: #555555;
+      border-bottom-color: #555555;
+      color: #000000;
+      text-shadow: 1px 1px 0px #ffffff;
+      outline: none;
+      transition: background 0.1s;
+    }
+
+    .submit-btn:hover {
+      background: #d8d8d8;
+    }
+
+    .submit-btn:active {
+      border-color: #555555;
+      border-right-color: #ffffff;
+      border-bottom-color: #ffffff;
+      transform: translateY(1px);
+    }
+
+    /* 3 Jumping & 360-spinning Minecraft dirt blocks loading container */
+    .loading-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .blocks-wrapper {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      justify-content: center;
+      height: 50px;
+    }
+
+    .pixel-block {
+      width: 28px;
+      height: 28px;
+      background-image: url('dirt.png');
+      background-size: cover;
+      image-rendering: pixelated;
+      border: 2px solid #1a110a;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6);
+      transform-origin: center center;
+      animation: jumpAndSpin 1.4s infinite cubic-bezier(0.28, 0.84, 0.42, 1);
+    }
+
+    /* Staggered jump & 360 spin animation */
+    .block-1 {
+      animation-delay: 0s;
+    }
+    .block-2 {
+      animation-delay: 0.25s;
+    }
+    .block-3 {
+      animation-delay: 0.5s;
+    }
+
+    @keyframes jumpAndSpin {
+      0% {
+        transform: translateY(0px) rotate(0deg) scale(1);
+      }
+      35% {
+        transform: translateY(-28px) rotate(180deg) scale(1.15);
+      }
+      70% {
+        transform: translateY(0px) rotate(360deg) scale(1);
+      }
+      85% {
+        transform: translateY(-3px) rotate(360deg) scale(0.95);
+      }
+      100% {
+        transform: translateY(0px) rotate(360deg) scale(1);
+      }
+    }
+
+    .loading-text {
+      font-size: 13px;
+      color: #e5e5e5;
+      text-shadow: 1px 1px 0px #000000;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+
+    /* Bottom footer */
+    .footer {
+      background: rgba(0, 0, 0, 0.6);
+      border-top: 2px solid #1a110a;
+      padding: 15px 20px;
+      text-align: center;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      color: #d1d5db;
+      text-shadow: 1px 1px 0px #000000;
+    }
+
+    .footer a {
+      color: #f3f4f6;
+      text-decoration: underline;
+      margin: 0 10px;
+    }
+
+    .footer a:hover {
+      color: #fbbf24;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Pixel Art Banner -->
+  <div class="banner">
+    <img src="banner.png" alt="Crash Handler Banner">
+  </div>
+
+  <!-- Middle Upload Section -->
+  <div class="content">
+    <h2 id="mainHeading">Upload Crash Log</h2>
+    <div class="upload-box">
+      <!-- Hidden file input -->
+      <input type="file" id="crashFileInput" accept=".log,.txt" onchange="handleFileChosen(this)">
+
+      <!-- Submit button that directly triggers file picker -->
+      <button type="button" id="submitBtn" class="submit-btn" onclick="triggerFilePicker()">Submit Log</button>
+
+      <!-- 3 Jumping & 360-spinning dirt blocks loader -->
+      <div id="loader" class="loading-container">
+        <div class="blocks-wrapper">
+          <div class="pixel-block block-1"></div>
+          <div class="pixel-block block-2"></div>
+          <div class="pixel-block block-3"></div>
+        </div>
+        <div class="loading-text" id="statusText">Reading file...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Footer -->
+  <div class="footer">
+    <div>NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.</div>
+    <div>
+      <a href="#terms">TERMS OF USE</a>
+      <a href="#privacy">PRIVACY POLICY</a>
+      <a href="#contact">CONTACT</a>
+    </div>
+  </div>
+
+  <script>
+    let loadingInterval = null;
+
+    function triggerFilePicker() {
+      document.getElementById('crashFileInput').click();
+    }
+
+    function handleFileChosen(input) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const heading = document.getElementById('mainHeading');
+        const submitBtn = document.getElementById('submitBtn');
+        const loader = document.getElementById('loader');
+        const statusText = document.getElementById('statusText');
+
+        // Hide submit button and show loader
+        submitBtn.style.display = 'none';
+        loader.style.display = 'flex';
+
+        // Dynamic animated loading title
+        const baseTitle = "Loading";
+        let dotCount = 0;
+        heading.textContent = baseTitle + "...";
+
+        loadingInterval = setInterval(() => {
+          dotCount = (dotCount + 1) % 4;
+          heading.textContent = baseTitle + ".".repeat(dotCount);
+        }, 400);
+
+        // Dynamic progressive status messages
+        statusText.textContent = 'Reading ' + file.name + '...';
+
+        setTimeout(() => {
+          statusText.textContent = 'Scanning stacktrace & exceptions...';
+        }, 1500);
+
+        setTimeout(() => {
+          statusText.textContent = 'Detecting faulty mods & plugins...';
+        }, 3000);
+
+        setTimeout(() => {
+          clearInterval(loadingInterval);
+          heading.textContent = 'Analysis Complete!';
+          statusText.textContent = 'Crash report processed successfully ✓';
+        }, 4500);
+      }
+    }
+  </script>
+
+</body>
+</html>
